@@ -1,0 +1,42 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  job:
+    name: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 19.x
+      
+      - name: install deps
+        run: npm install
+      
+      - name: build
+        run: npm run build
+        env:
+          CI: false
+        
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: |
+            ${{github.workspace}}/build
+        
+      - name: deploy
+        uses: wangyucode/sftp-upload-action@v2.0.2
+        with: 
+          username: www
+          host: ${{ secrets.SERVER_ADDR }} 
+          privateKey: ${{ secrets.SSH_PRIVATE_KEY }} 
+          localDir: ./build
+          remoteDir: ${{ secrets.REMOTE_PATH }} 
+          

@@ -1,0 +1,159 @@
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import PropTypes from 'prop-types';
+import styles from "./index.module.css";
+import {Button, Form, Input, Popconfirm, Space, Table} from "antd";
+import {nanoid} from "nanoid";
+import {EditableCell, EditableRow, rowStyle} from "../../components/EditableTable";
+
+const {Column, ColumnGroup} = Table;
+
+User.propTypes = {};
+
+const test_data = [
+  {
+    key: '1',
+    name: '张三',
+    card_id: 'XXXXXXXXXXXXXXXXXX',
+    phone: '1XXXXXXXXXX',
+    email: 'XXX@XXX.XXX',
+    address: 'XXXXXXX'
+  }
+]
+
+
+function User(props) {
+  const [dataSource, setDataSource] = useState(test_data)
+  // const [count, setCount] = useState(test_data.length);
+  // const [key, setKey] = useState('')
+  // const [column, setColumn] = useState('')
+  // const [inputVal, setInputVal] = useState('')
+
+  const handleDelete = (key) => {
+    const newData = dataSource.filter((item) => item.key !== key);
+    setDataSource(newData);
+    console.log('delete', key)
+  };
+
+  const columns = [
+    {
+      title: 'debug_id',
+      dataIndex: 'key',
+      key: 'key'
+    },
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      key: 'name',
+      editable: true
+    },
+    {
+      title: '身份证号',
+      dataIndex: 'card_id',
+      key: 'card_id',
+      editable: true
+    },
+    {
+      title: '手机',
+      dataIndex: 'phone',
+      key: 'phone',
+      editable: true
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      key: 'email',
+      editable: true
+    },
+    {
+      title: '地址',
+      dataIndex: 'address',
+      key: 'address',
+      editable: true
+    },
+    {
+      title: '操作',
+      dataIndex: 'operation',
+      key: 'operation',
+      render: (_, record) =>
+        <Popconfirm title="确定删除吗?" onConfirm={() => handleDelete(record.key)}>
+          <a>删除</a>
+        </Popconfirm>
+    },
+  ]
+
+  const components = {
+    body: {
+      row: EditableRow,
+      cell: EditableCell,
+    },
+  };
+  const handleAdd = () => {
+    const newData = {
+      key: nanoid(),
+      name: '张三',
+      card_id: 'XXXXXXXXXXXXXXXXXX',
+      phone: '1XXXXXXXXXX',
+      email: 'XXX@XXX.XXX',
+      address: 'XXXXXXX'
+    };
+    setDataSource([...dataSource, newData]);
+  };
+  const handleSave = (row) => {
+    const newData = [...dataSource];
+    const index = newData.findIndex((item) => row.key === item.key);
+    const item = newData[index];
+    newData.splice(index, 1, {
+      ...item,
+      ...row,
+    });
+    setDataSource(newData);
+    console.log('save', row)
+  };
+  const real_columns = columns.map((col) => {
+    if (!col.editable) {
+      return col;
+    }
+    return {
+      ...col,
+      onCell: (record) => ({
+        record,
+        editable: col.editable,
+        dataIndex: col.dataIndex,
+        title: col.title,
+        handleSave,
+      }),
+    };
+  });
+
+  return (
+    <>
+      <Button type="primary" onClick={handleAdd}>添加用户</Button>
+      {/*<Table dataSource={test_data}>*/}
+      {/*  <Column title="debug_id" dataIndex="key" key="key"/>*/}
+      {/*  <Column title="姓名" dataIndex="name" key="name" render={(val, record) => (*/}
+      {/*    (key === record.key && column === 'name') ?*/}
+      {/*      <Space.Compact><Input value="111" onChange={e => setInputVal(e.target.value)}/><Button*/}
+      {/*        type='primary'>保存</Button></Space.Compact> :*/}
+      {/*      <div onClick={() => {*/}
+      {/*        setKey(record.key);*/}
+      {/*        setColumn('name');*/}
+      {/*        setInputVal(val)*/}
+      {/*      }}>{val}</div>*/}
+      {/*  )} onCell={(record, rowIndex) => console.log(record, rowIndex)}/>*/}
+      {/*  <Column title="身份证号" dataIndex="card_id" key="card_id"/>*/}
+      {/*  <Column title="手机" dataIndex="phone" key="phone"/>*/}
+      {/*  <Column title="邮箱" dataIndex="email" key="email"/>*/}
+      {/*  <Column title="地址" dataIndex="address" key="address"/>*/}
+      {/*</Table>*/}
+      <Table
+        components={components}
+        rowClassName={() => rowStyle}
+        bordered
+        dataSource={dataSource}
+        columns={real_columns}
+      />
+    </>
+  );
+}
+
+export default User;

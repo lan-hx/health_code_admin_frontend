@@ -6,12 +6,16 @@ import {EditableCell, EditableRow, rowStyle} from "../../components/EditableTabl
 import styles from "./index.module.css";
 import {LoadingOutlined, SearchOutlined} from "@ant-design/icons";
 import Highlighter from 'react-highlight-words';
+import {useSelector} from "react-redux";
+import axios from "axios";
+import {setUserToken} from "../../redux/user/userSlice";
+import {setUserInfo} from "../../redux/userInfo/userInfoSlice";
 
 User.propTypes = {};
 
 const test_data = [
   {
-    id: '1',
+    user_id: '1',
     name: '张三',
     card_id: 'XXXXXXXXXXXXXXXXXX',
     phone: '1XXXXXXXXXX',
@@ -22,6 +26,7 @@ const test_data = [
 ]
 
 function User(props) {
+  const userToken = useSelector(state => state.user.token)
   const [data, setData] = useState(test_data) // 数据
   const [selectedRowKeys, setSelectedRowKeys] = useState([]) // [选中行的id]
   const hasSelected = selectedRowKeys.length > 0
@@ -80,12 +85,12 @@ function User(props) {
     render: (text) =>
       searchedColumn === dataIndex ? (
         <Highlighter highlightStyle={{
-            backgroundColor: '#ffc069',
-            padding: 0,
-          }}
-          searchWords={[searchText]}
-          autoEscape
-          textToHighlight={text ? text.toString() : ''}
+          backgroundColor: '#ffc069',
+          padding: 0,
+        }}
+                     searchWords={[searchText]}
+                     autoEscape
+                     textToHighlight={text ? text.toString() : ''}
         />
       ) : (text),
   });
@@ -97,55 +102,83 @@ function User(props) {
       console.log(`newSelectedRowKeys: ${newSelectedRowKeys}`, 'newSelectedRows: ', newSelectedRows);
       setSelectedRowKeys(newSelectedRowKeys);
     },
-    getCheckboxProps: (record) => ({
-      disabled: record.name === 'Disabled User',
-      // Column configuration not to be checked
-      // name: record.name,
-    }),
+    // getCheckboxProps: (record) => ({
+    //   disabled: record.name === 'Disabled User',
+    //   // Column configuration not to be checked
+    //   // name: record.name,
+    // }),
   };
 
   // delete a row
   const handleDelete = async (record) => {
     if (!record.new) {
-      await new Promise(r => setTimeout(r, 1000));
+      try {
+        const response = await axios.post('/api/DeleteUser', {
+          token: userToken,
+          user_id: record.user_id,
+        })
+        console.log(response);
+        const res = response.data
+        if (res.error !== 0) {
+          notification.error({message: '提示', description: `删除用户失败，错误码${res.error}，错误信息：${res.message}`})
+        } else {
+          notification.success({message: '提示', description: `删除用户成功`})
+          const newData = data.filter(item => item.user_id !== record.user_id);
+          setData(newData);
+          console.log('delete', record.user_id)
+        }
+      } catch (error) {
+        console.error(error);
+        notification.error({message: '提示', description: `删除用户失败，网络错误`})
+      }
+    } else {
+      const newData = data.filter(item => item.user_id !== record.user_id);
+      setData(newData);
+      console.log('delete', record.user_id)
     }
-    const newData = data.filter((item) => item.id !== record.id);
-    setData(newData);
-    console.log('delete', record.id)
-    notification.success({
-      message: '修改提示',
-      description: '删除用户成功！',
-    });
   };
 
   // add a row
-  const handleAddUser = async (id) => {
-    setAddUserLoadingRow(id)
+  const handleAddUser = async (user_id) => {
+    setAddUserLoadingRow(user_id)
     setAddUserLoading(true)
     const newData = [...data];
-    const index = newData.findIndex((item) => id === item.id);
+    const index = newData.findIndex((item) => user_id === item.user_id);
     const item = newData[index];
-    const new_id = nanoid()
-    newData.splice(index, 1, {
-      ...item,
-      id: new_id,
-      new: false
-    });
-    await new Promise(r => setTimeout(r, 1000));
-    setData(newData);
+    try {
+      const response = await axios.post('/api/AddUser', {
+        token: userToken,
+        name: item.name,
+        card_id: item.card_id,
+        phone: item.phone,
+        email: item.email,
+      })
+      console.log(response);
+      const res = response.data
+      if (res.error !== 0) {
+        notification.error({message: '提示', description: `添加用户失败，错误码${res.error}，错误信息：${res.message}`})
+      } else {
+        notification.success({message: '提示', description: `添加用户成功，[debug]服务器返回id = ${res.user_id}`})
+        newData.splice(index, 1, {
+          ...item,
+          user_id: res.user_id,
+          new: false
+        });
+        setData(newData);
+      }
+    } catch (error) {
+      console.error(error);
+      notification.error({message: '提示', description: `添加用户失败，网络错误`})
+    }
     setAddUserLoading(false)
-    notification.success({
-      message: '修改提示',
-      description: `添加用户成功！[debug]服务器返回id = ${new_id}`,
-    });
   };
 
   // column config
   const columns = [
     {
       title: '[debug] id',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'user_id',
+      key: 'user_id',
       filters: [
         {
           text: '未保存用户',
@@ -153,7 +186,7 @@ function User(props) {
         }
       ],
       onFilter: (value, record) => record.new === value,
-      sorter: (a, b) => a.id.localeCompare(b.id),
+      sorter: (a, b) => a.user_id.localeCompare(b.user_id),
     },
     {
       title: '姓名',
@@ -203,8 +236,8 @@ function User(props) {
       key: 'operation',
       render: (_, record) => <Space>
         {record.new ? <><Button type="link" style={{padding: 0}} disabled={addUserLoading} onClick={() => {
-          handleAddUser(record.id)
-        }}>保存</Button>{addUserLoading && addUserLoadingRow === record.id ?
+          handleAddUser(record.user_id)
+        }}>保存</Button>{addUserLoading && addUserLoadingRow === record.user_id ?
           <Spin indicator={<LoadingOutlined spin/>}/> : null}</> : null}
         <Popconfirm title="确定删除吗?" okText="确定" cancelText="取消" onConfirm={() => handleDelete(record)}>
           <Button type="link" style={{padding: 0}}>删除</Button>
@@ -221,7 +254,7 @@ function User(props) {
   };
   const handleAdd = () => {
     const newData = {
-      id: nanoid(),
+      user_id: nanoid(),
       name: '张三',
       card_id: 'XXXXXXXXXXXXXXXXXX',
       phone: '1XXXXXXXXXX',
@@ -232,27 +265,44 @@ function User(props) {
     setData([...data, newData]);
   };
   const handleSave = async (row, column_name) => {
-    const index = data.findIndex((item) => row.id === item.id);
+    const index = data.findIndex((item) => row.user_id === item.user_id);
     const changed = row[column_name] !== data[index][column_name]
     console.log(changed)
     if (changed) {
       const newData = [...data];
       const item = newData[index];
-      newData.splice(index, 1, {
-        ...item,
-        ...row,
-      });
-      if(!row.new) {
-        await new Promise(r => setTimeout(r, 1000));
+      if (!row.new) {
+        try {
+          const response = await axios.post('/api/SetUser', {
+            token: userToken,
+            ...item,
+            ...row,
+          })
+          console.log(response);
+          const res = response.data
+          if (res.error !== 0) {
+            notification.error({message: '提示', description: `保存失败，错误码${res.error}，错误信息：${res.message}`})
+          } else {
+            notification.success({message: '提示', description: `保存成功`})
+            newData.splice(index, 1, {
+              ...item,
+              ...row,
+            });
+            setData(newData);
+            console.log('change', row)
+          }
+        } catch (error) {
+          console.error(error);
+          notification.error({message: '提示', description: `保存失败，网络错误`})
+        }
+      } else {
+        newData.splice(index, 1, {
+          ...item,
+          ...row,
+        });
+        setData(newData);
+        console.log('change', row)
       }
-      setData(newData);
-    }
-    console.log('save', row)
-    if (!row.new && changed) {
-      notification.success({
-        message: '修改提示',
-        description: '保存成功！',
-      });
     }
   };
   const real_columns = columns.map((col) => {
@@ -272,8 +322,25 @@ function User(props) {
   });
   const fetchData = async () => {
     setTableLoading(true);
-    await new Promise(r => setTimeout(r, 3000));
-    setTableLoading(false);
+    console.log(userToken)
+    try {
+      const response = await axios.post('/api/GetUserAll', {
+        token: userToken,
+      })
+      console.log(response);
+      const res = response.data
+      if (res.error !== 0) {
+        notification.error({message: '提示', description: `数据获取失败，错误码${res.error}，错误信息：${res.message}`})
+      } else {
+        notification.success({message: '提示', description: `数据获取成功`})
+        setData(res.users)
+        setTableLoading(false);
+      }
+    } catch (error) {
+      console.error(error);
+      notification.error({message: '提示', description: `数据获取失败，网络错误`})
+    }
+    // await new Promise(r => setTimeout(r, 100));
   };
 
   useEffect(() => {
@@ -302,9 +369,9 @@ function User(props) {
         bordered
         dataSource={data}
         columns={real_columns}
-        rowKey={record => record.id}
+        rowKey={record => record.user_id}
         loading={tableLoading}
-        showSorterTooltip = {false}
+        showSorterTooltip={false}
       />
     </>
   );

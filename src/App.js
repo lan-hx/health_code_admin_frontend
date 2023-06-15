@@ -9,19 +9,28 @@ import {
   Input,
   Layout,
   Menu,
-  Modal,
+  Modal, notification,
   theme,
   Tooltip
 } from 'antd';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import './App.css';
 import {routes, tabs, tabsMap, tabsReverseMap} from "./pages/config";
 import {Link, useLocation, useNavigate, useRoutes} from "react-router-dom";
 import {LockOutlined, UserOutlined} from "@ant-design/icons";
+import {useCookies} from "react-cookie";
+import {setUserToken} from "./redux/user/userSlice";
+import {useDispatch, useSelector} from "react-redux";
+import axios from "axios";
+import {setUserInfo} from "./redux/userInfo/userInfoSlice";
 
 const {Header, Content, Footer, Sider} = Layout;
 
 const App = () => {
+  const [cookies, setCookie, removeCookie] = useCookies(['adminUser']);
+  const userToken = useSelector(state => state.user.token)
+  const userInfo = useSelector(state => state.userInfo.info)
+  const dispatch = useDispatch()
   const element = useRoutes(routes)
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,6 +40,16 @@ const App = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [loginButtonLoading, setLoginButtonLoading] = useState(false)
   const [loginStatus, setLoginStatus] = useState(true)
+
+  const willMount = useRef(true)
+  if(willMount.current) {
+    dispatch(setUserToken(cookies.adminToken ?? ''))
+    dispatch(setUserInfo({name: cookies.adminUserInfo ?? ''}))
+    console.log(`get token from cookie:`, cookies.adminToken)
+    console.log(`get username from cookie:`, cookies.adminUserInfo)
+    willMount.current = false
+  }
+
   const onOpenChange = keys => setOpenKeys(keys.length ? [keys[keys.length - 1]] : [])
   const {
     token: {colorBgContainer},
@@ -78,6 +97,8 @@ const App = () => {
     }
   }).reverse())
 
+  console.log('userInfo', userInfo)
+
   return (
     <Layout style={{minHeight: '100vh'}}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
@@ -99,7 +120,7 @@ const App = () => {
           <Dropdown menu={{items: dropdownItems}} placement="bottom" arrow>
             <Button style={{height: 36, display: "flex", alignItems: "center"}}>
               <Avatar size={24} icon={<UserOutlined/>} style={{marginRight: 10}}>User</Avatar>
-              test
+              {userInfo.name}
             </Button>
           </Dropdown>
         </Header>
@@ -124,7 +145,8 @@ const App = () => {
             textAlign: 'center',
           }}
         >
-          hahaha
+          hahaha<br />
+          [debug] token:{userToken}
         </Footer>
         <Modal
           title={<div style={{textAlign: "center", padding: 10}}>用户登录</div>}
@@ -144,14 +166,31 @@ const App = () => {
             onFinish={async e => {
               console.log(e)
               setLoginButtonLoading(true)
-              await new Promise(r => setTimeout(r, 1000))
-              setLoginButtonLoading(false)
-              if (e.username === 'test' && e.password === 'test') {
-                setLoginStatus(true)
-                setModalOpen(false)
-              } else {
+              try {
+                const response = await axios.post('/api/LoginAdminUser', {
+                  name: e.username,
+                  password: e.password
+                })
+                console.log(response);
+                const data = response.data
+                if(data.error !== 0) {
+                  notification.error({message: '登录提示', description: `登录失败，错误码${data.error}，错误信息：${data.message}`})
+                  setLoginStatus(false)
+                } else if(data.token) {
+                  notification.success({message: '登录提示', description: `登录成功`})
+                  dispatch(setUserToken(data.token))
+                  dispatch(setUserInfo({name: e.username}))
+                  setCookie('adminToken', data.token)
+                  setCookie('adminUserInfo', e.username)
+                  setLoginStatus(true)
+                  setModalOpen(false)
+                }
+              } catch (error) {
+                console.error(error);
+                notification.error({message: '登录提示', description: `登录失败，网络错误`})
                 setLoginStatus(false)
               }
+              setLoginButtonLoading(false)
             }}
           >
             <Form.Item

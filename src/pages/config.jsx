@@ -12,6 +12,7 @@ import TestPoint from "./TestPoint";
 import VaccinePoint from "./VaccinePoint";
 import AdminUser from "./AdminUser";
 import About from "./About";
+import Tests from "./Tests";
 
 export const tabsMap = {
   1: {label: "首页", path: '/', element: <Root/>},
@@ -20,10 +21,11 @@ export const tabsMap = {
   4: {label: "关于", path: '/about', element: <About/>},
   21: {label: "健康码管理", path: '/healthcode', element: <HealthCode/>},
   22: {label: "到访场所管理", path: '/locationcode', element: <LocationCode/>},
-  23: {label: "疫苗接种管理", path: '/vaccine', element: <Vaccine/>},
-  24: {label: "疫苗接种预约管理", path: '/vaccineappointment', element: <VaccineAppointment/>},
-  25: {label: "健康码申诉管理", path: '/complain', element: <Complain/>},
-  26: {label: "个人信息管理", path: '/user', element: <User/>},
+  23: {label: "核酸检测管理", path: '/tests', element: <Tests/>},
+  24: {label: "疫苗接种管理", path: '/vaccine', element: <Vaccine/>},
+  25: {label: "疫苗接种预约管理", path: '/vaccineappointment', element: <VaccineAppointment/>},
+  26: {label: "健康码申诉管理", path: '/complain', element: <Complain/>},
+  27: {label: "个人信息管理", path: '/user', element: <User/>},
   31: {label: "场所管理", path: '/locations', element: <Locations/>},
   32: {label: "核酸检测点管理", path: '/testpoint', element: <TestPoint/>},
   33: {label: "疫苗接种点管理", path: '/vaccinepoint', element: <VaccinePoint/>},
@@ -34,10 +36,11 @@ export const tabsReverseMap = {
   '/about': ['4'],
   '/healthcode': ['21', '2'],
   '/locationcode': ['22', '2'],
-  '/vaccine': ['23', '2'],
-  '/vaccineappointment': ['24', '2'],
-  '/complain': ['25', '2'],
-  '/user': ['26', '2'],
+  '/tests': ['23', '2'],
+  '/vaccine': ['24', '2'],
+  '/vaccineappointment': ['25', '2'],
+  '/complain': ['26', '2'],
+  '/user': ['27', '2'],
   '/locations': ['31', '3'],
   '/testpoint': ['32', '3'],
   '/vaccinepoint': ['33', '3'],
@@ -88,6 +91,7 @@ export const tabs = [
       {key: 24, label: tabsMap[24].label},
       {key: 25, label: tabsMap[25].label},
       {key: 26, label: tabsMap[26].label},
+      {key: 27, label: tabsMap[27].label},
     ]
   },
   {

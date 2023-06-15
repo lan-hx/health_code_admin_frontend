@@ -21,13 +21,14 @@ const test_data = [
     phone: '1XXXXXXXXXX',
     email: 'XXX@XXX.XXX',
     address: 'XXXXXXX',
+    health_code_status: 0,
     new: false
   }
 ]
 
 function User(props) {
   const userToken = useSelector(state => state.user.token)
-  const [data, setData] = useState(test_data) // 数据
+  const [data, setData] = useState([]) // 数据
   const [selectedRowKeys, setSelectedRowKeys] = useState([]) // [选中行的id]
   const hasSelected = selectedRowKeys.length > 0
   const [buttonLoading, setButtonLoading] = useState(false) // 测试按钮的loading
@@ -152,6 +153,7 @@ function User(props) {
         card_id: item.card_id,
         phone: item.phone,
         email: item.email,
+        health_code_status: item.health_code_status
       })
       console.log(response);
       const res = response.data
@@ -231,6 +233,32 @@ function User(props) {
       editable: true,
     },
     {
+      title: '健康码状态',
+      dataIndex: 'health_code_status',
+      key: 'health_code_status',
+      editable: true,
+      sorter: (a, b) => a.health_code_status < b.health_code_status,
+      filters: [
+        {
+          text: '绿码',
+          value: 0
+        },
+        {
+          text: '黄码',
+          value: 1
+        },
+        {
+          text: '红码',
+          value: 2
+        },
+        {
+          text: '灰码',
+          value: 3
+        },
+      ],
+      onFilter: (value, record) => record.health_code_status === value,
+    },
+    {
       title: '操作',
       dataIndex: 'operation',
       key: 'operation',
@@ -260,11 +288,13 @@ function User(props) {
       phone: '1XXXXXXXXXX',
       email: 'XXX@XXX.XXX',
       address: 'XXXXXXX',
+      health_code_status: 0,
       new: true
     };
     setData([...data, newData]);
   };
   const handleSave = async (row, column_name) => {
+    row.health_code_status = parseInt(row.health_code_status)
     const index = data.findIndex((item) => row.user_id === item.user_id);
     const changed = row[column_name] !== data[index][column_name]
     console.log(changed)

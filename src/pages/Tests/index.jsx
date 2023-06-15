@@ -9,21 +9,22 @@ import axios from "axios";
 import {EditableCell, EditableRow, rowStyle} from "../../components/EditableTable";
 import {nanoid} from "nanoid";
 
-Locations.propTypes = {};
+Tests.propTypes = {
+
+};
 
 const test_data = [
   {
-    place_id: '1',
-    place_name: '浙江大学',
-    place_addr_x: 123.456,
-    place_addr_y: 11.22,
-    place_addr_string: 'xx路xx号',
+    nucleic_id: '1',
+    user_id: '123123',
+    place_id: 'dsf',
+    result: 0,
+    datetime: 0,
     new: false
   }
 ]
 
-
-function Locations(props) {
+function Tests(props) {
   const userToken = useSelector(state => state.user.token)
   const [data, setData] = useState([]) // 数据
   const [selectedRowKeys, setSelectedRowKeys] = useState([]) // [选中行的id]
@@ -111,61 +112,62 @@ function Locations(props) {
   const handleDelete = async (record) => {
     if (!record.new) {
       try {
-        const response = await axios.post('/api/DeletePlaces', {
+        const response = await axios.post('/api/DeleteNucleic', {
           token: userToken,
-          place_id: record.place_id,
+          nucleic_id: record.nucleic_id,
         })
         console.log(response);
         const res = response.data
         if (res.error !== 0) {
-          notification.error({message: '提示', description: `删除场所失败，错误码${res.error}，错误信息：${res.message}`})
+          notification.error({message: '提示', description: `删除核酸检测记录失败，错误码${res.error}，错误信息：${res.message}`})
         } else {
-          notification.success({message: '提示', description: `删除场所成功`})
-          const newData = data.filter(item => item.place_id !== record.place_id);
+          notification.success({message: '提示', description: `删除核酸检测记录成功`})
+          const newData = data.filter(item => item.nucleic_id !== record.nucleic_id);
           setData(newData);
-          console.log('delete', record.place_id)
+          console.log('delete', record.nucleic_id)
         }
       } catch (error) {
         console.error(error);
-        notification.error({message: '提示', description: `删除场所失败，网络错误`})
+        notification.error({message: '提示', description: `删除核酸检测记录失败，网络错误`})
       }
     } else {
-      const newData = data.filter(item => item.place_id !== record.place_id);
+      const newData = data.filter(item => item.nucleic_id !== record.nucleic_id);
       setData(newData);
-      console.log('delete', record.place_id)
+      console.log('delete', record.nucleic_id)
     }
   };
 
   // add a row
-  const handleAddUser = async (place_id) => {
-    setAddUserLoadingRow(place_id)
+  const handleAddUser = async (nucleic_id) => {
+    setAddUserLoadingRow(nucleic_id)
     setAddUserLoading(true)
     const newData = [...data];
-    const index = newData.findIndex((item) => place_id === item.place_id);
+    const index = newData.findIndex((item) => nucleic_id === item.nucleic_id);
     const item = newData[index];
     try {
-      const response = await axios.post('/api/AddPlaces', {
+      const response = await axios.post('/api/AddNucleic', {
         token: userToken,
-        place_name: item.place_name,
-        place_addr: {latitude: parseFloat(item.place_addr_x), longitude: parseFloat(item.place_addr_y)},
-        place_addr_string: item.place_addr_string,
+        user_id: item.user_id,
+        place_id: item.place_id,
+        result: parseInt(item.result),
+        datetime: parseInt(item.datetime),
       })
       console.log(response);
       const res = response.data
       if (res.error !== 0) {
-        notification.error({message: '提示', description: `添加场所失败，错误码${res.error}，错误信息：${res.message}`})
+        notification.error({message: '提示', description: `添加核酸检测记录失败，错误码${res.error}，错误信息：${res.message}`})
       } else {
-        notification.success({message: '提示', description: `添加场所成功，[debug]服务器返回id = ${res.place_id}`})
+        notification.success({message: '提示', description: `添加核酸检测记录成功，[debug]服务器返回id = ${res.nucleic_id}`})
         newData.splice(index, 1, {
           ...item,
-          place_id: res.place_id,
+          nucleic_id: res.nucleic_id,
           new: false
         });
         setData(newData);
       }
     } catch (error) {
       console.error(error);
-      notification.error({message: '提示', description: `添加场所失败，网络错误`})
+      notification.error({message: '提示', description: `添加核酸检测记录失败，网络错误`})
     }
     setAddUserLoading(false)
   };
@@ -174,44 +176,65 @@ function Locations(props) {
   const columns = [
     {
       title: '[debug] id',
-      dataIndex: 'place_id',
-      key: 'place_id',
+      dataIndex: 'nucleic_id',
+      key: 'nucleic_id',
       filters: [
         {
-          text: '未保存场所',
+          text: '未保存核酸检测记录',
           value: true
         }
       ],
       onFilter: (value, record) => record.new === value,
+      sorter: (a, b) => a.nucleic_id.localeCompare(b.nucleic_id),
+    },
+    {
+      title: '核酸检测对象id',
+      dataIndex: 'user_id',
+      key: 'user_id',
+      editable: true,
+      sorter: (a, b) => a.user_id.localeCompare(b.user_id),
+      ...getColumnSearchProps('user_id', '核酸检测对象id')
+    },
+    {
+      title: '核酸检测地址id',
+      dataIndex: 'place_id',
+      key: 'place_id',
+      editable: true,
       sorter: (a, b) => a.place_id.localeCompare(b.place_id),
+      ...getColumnSearchProps('place_id', '核酸检测地址id')
     },
     {
-      title: '场所名称',
-      dataIndex: 'place_name',
-      key: 'place_name',
+      title: '结果',
+      dataIndex: 'result',
+      key: 'result',
       editable: true,
-      sorter: (a, b) => a.name.localeCompare(b.name),
-      ...getColumnSearchProps('place_name', '场所名称')
+      filters: [
+        {
+          text: '阴性',
+          value: 0
+        },
+        {
+          text: '混管阳性',
+          value: 1
+        },
+        {
+          text: '阳性',
+          value: 2
+        },
+        {
+          text: '报告未出',
+          value: 3
+        },
+      ],
+      onFilter: (value, record) => record.result === value,
+      sorter: (a, b) => a.result < b.result,
     },
     {
-      title: '场所纬度',
-      dataIndex: 'place_addr_x',
-      key: 'place_addr_x',
+      title: '时间',
+      dataIndex: 'datetime',
+      key: 'datetime',
       editable: true,
-      sorter: (a, b) => a.place_addr_x < b.place_addr_x,
-    },
-    {
-      title: '场所经度',
-      dataIndex: 'place_addr_y',
-      key: 'place_addr_y',
-      editable: true,
-      sorter: (a, b) => a.place_addr_y < b.place_addr_y,
-    },
-    {
-      title: '场所地址详情',
-      dataIndex: 'place_addr_string',
-      key: 'place_addr_string',
-      editable: true,
+      sorter: (a, b) => a.datetime < b.datetime,
     },
     {
       title: '操作',
@@ -219,8 +242,8 @@ function Locations(props) {
       key: 'operation',
       render: (_, record) => <Space>
         {record.new ? <><Button type="link" style={{padding: 0}} disabled={addUserLoading} onClick={() => {
-          handleAddUser(record.place_id)
-        }}>保存</Button>{addUserLoading && addUserLoadingRow === record.place_id ?
+          handleAddUser(record.nucleic_id)
+        }}>保存</Button>{addUserLoading && addUserLoadingRow === record.nucleic_id ?
           <Spin indicator={<LoadingOutlined spin/>}/> : null}</> : null}
         <Popconfirm title="确定删除吗?" okText="确定" cancelText="取消" onConfirm={() => handleDelete(record)}>
           <Button type="link" style={{padding: 0}}>删除</Button>
@@ -237,17 +260,19 @@ function Locations(props) {
   };
   const handleAdd = () => {
     const newData = {
-      place_id: nanoid(),
-      place_name: '浙江大学',
-      place_addr_x: 123.456,
-      place_addr_y: 11.22,
-      place_addr_string: 'xx路xx号',
+      nucleic_id: nanoid(),
+      user_id: '123123',
+      place_id: 'dsf',
+      result: 0,
+      datetime: 0,
       new: true
     };
     setData([...data, newData]);
   };
   const handleSave = async (row, column_name) => {
-    const index = data.findIndex((item) => row.place_id === item.place_id);
+    row.result = parseInt(row.result)
+    row.datetime = parseInt(row.datetime)
+    const index = data.findIndex((item) => row.nucleic_id === item.nucleic_id);
     const changed = row[column_name] !== data[index][column_name]
     console.log(changed)
     if (changed) {
@@ -255,12 +280,10 @@ function Locations(props) {
       const item = newData[index];
       if (!row.new) {
         try {
-          const response = await axios.post('/api/SetPlaces', {
+          const response = await axios.post('/api/SetNucleic', {
             token: userToken,
-            place_id: row.place_id,
-            place_name: row.place_name,
-            place_addr: {latitude: parseFloat(row.place_addr_x), longitude: parseFloat(row.place_addr_y)},
-            place_addr_string: row.place_addr_string,
+            ...item,
+            ...row,
           })
           console.log(response);
           const res = response.data
@@ -308,7 +331,7 @@ function Locations(props) {
     setTableLoading(true);
     console.log(userToken)
     try {
-      const response = await axios.post('/api/GetPlacesAll', {
+      const response = await axios.post('/api/GetNucleicAll', {
         token: userToken,
       })
       console.log(response);
@@ -317,15 +340,7 @@ function Locations(props) {
         notification.error({message: '提示', description: `数据获取失败，错误码${res.error}，错误信息：${res.message}`})
       } else {
         notification.success({message: '提示', description: `数据获取成功`})
-        setData(res.result.map(item => {
-          return {
-            place_id: item.place_id,
-            place_name: item.place_name,
-            place_addr_x: item.place_addr.latitude,
-            place_addr_y: item.place_addr.longitude,
-            place_addr_string: item.place_addr_string,
-          }
-        }))
+        setData(res.result)
         setTableLoading(false);
       }
     } catch (error) {
@@ -341,7 +356,7 @@ function Locations(props) {
 
   return (
     <>
-      <Button type="primary" onClick={handleAdd}>添加场所</Button>
+      <Button type="primary" onClick={handleAdd}>添加核酸检测记录</Button>
       <Button type="primary" onClick={async () => {
         setButtonLoading(true);
         await new Promise(r => setTimeout(r, 1000));
@@ -361,12 +376,13 @@ function Locations(props) {
         bordered
         dataSource={data}
         columns={real_columns}
-        rowKey={record => record.place_id}
+        rowKey={record => record.nucleic_id}
         loading={tableLoading}
         showSorterTooltip={false}
       />
     </>
   );
+
 }
 
-export default Locations;
+export default Tests;

@@ -241,10 +241,7 @@ function LocationCode(props) {
     setData([...data, newData]);
   };
   const handleSave = async (row, column_name) => {
-    notification.error({message: '提示', description: `不允许修改`})
-    return;
-    row.vaccination_counter = parseInt(row.vaccination_counter)
-    row.vaccination_time = parseInt(row.vaccination_time)
+    row.time = parseInt(row.time)
     const index = data.findIndex((item) => row.record_id === item.record_id);
     const changed = row[column_name] !== data[index][column_name]
     console.log(changed)
@@ -252,6 +249,8 @@ function LocationCode(props) {
       const newData = [...data];
       const item = newData[index];
       if (!row.new) {
+        notification.error({message: '提示', description: `不允许修改`})
+        return;
         try {
           const response = await axios.post('/api/SetVaccination', {
             token: userToken,

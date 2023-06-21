@@ -189,7 +189,7 @@ function LocationCode(props) {
       title: '用户id',
       dataIndex: 'user_id',
       key: 'user_id',
-      editable: false,
+      editable: true,
       sorter: (a, b) => a.user_id.localeCompare(b.user_id),
       ...getColumnSearchProps('user_id', '用户id')
     },
@@ -197,7 +197,7 @@ function LocationCode(props) {
       title: '场所id',
       dataIndex: 'place_id',
       key: 'place_id',
-      editable: false,
+      editable: true,
       sorter: (a, b) => a.place_id.localeCompare(b.place_id),
       ...getColumnSearchProps('place_id', '场所id')
     },
@@ -205,7 +205,7 @@ function LocationCode(props) {
       title: '时间',
       dataIndex: 'time',
       key: 'time',
-      editable: false,
+      editable: true,
       sorter: (a, b) => a.time < b.time,
     },
     {
@@ -241,7 +241,7 @@ function LocationCode(props) {
     setData([...data, newData]);
   };
   const handleSave = async (row, column_name) => {
-    notification.error({message: '提示', description: `保存失败`})
+    notification.error({message: '提示', description: `不允许修改`})
     return;
     row.vaccination_counter = parseInt(row.vaccination_counter)
     row.vaccination_time = parseInt(row.vaccination_time)
